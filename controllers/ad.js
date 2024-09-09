@@ -113,7 +113,9 @@ async function getRandomAd(req, res) {
   console.log("getting a random ad");
 
   const {api_key} = req.query;
-  // console.log(req.query.api_key);
+  var fullUrl = req.protocol + '://' + req.get('host') + req.originalUrl;
+  console.log(fullUrl)
+  console.log(req.query);
 
   try{
     // Check if api_key exists and fetch wallet address
@@ -175,11 +177,12 @@ async function getRandomAd(req, res) {
 
 
     const curr_bal = parseInt(adExists[0]?.available_balance) - 0.0001;
+    const curr_impression = parseInt(adExists[0]?.impression) + 1;
     const id = adExists[0]?._id;
 
     adExists = await Ad.findOneAndUpdate(
       { _id: id }, // Query to find the document by _id
-      { $set: { available_balance: curr_bal } }, // Update operation to set available_balance
+      { $set: { available_balance: curr_bal, impression: curr_impression} }, // Update operation to set available_balance
       { new: true } // Option to return the updated document
     );
 
