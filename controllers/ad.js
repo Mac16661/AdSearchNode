@@ -1,7 +1,8 @@
 const {Connection, PublicKey, Transaction, LAMPORTS_PER_SOL, Keypair, SystemProgram, sendAndConfirmTransaction } = require("@solana/web3.js");
 const bs58 = require('bs58');
-// const {base58_to_binary} =  import("base58-js");
+const axios = require('axios');
 require("dotenv").config();
+
 
 
 const Ad = require("../models/ad");
@@ -19,7 +20,7 @@ async function createAd(req, res) {
   console.log("ads created");
 
   // Destructuring all the data
-  const { name, image, available_balance, tags, org_id, org_name, embedding } =
+  const { name, image, available_balance, tags, org_id, org_name } =
     req.body;
 
   console.log(req.body);
@@ -39,6 +40,29 @@ async function createAd(req, res) {
     });
   }
 
+  let embedding;
+  // Create embedding
+  try {
+    const data = {
+      "text": name
+    };
+
+    
+    const response = await axios.post('http://127.0.0.1:5000/text-to-embedding', data, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    // console.log(response.data);
+    // return res.json(response.data)
+    embedding = response.data[0];
+    // console.log(embedding)
+  }catch(e){
+    console.log("Err while fetching embeddings",e)
+    return res.json({ err: "error occurred" });
+  }
+
   try {
     const publishAd = await Ad.create({
       name,
@@ -53,7 +77,7 @@ async function createAd(req, res) {
     console.log(publishAd);
     return res.json(publishAd);
   } catch (e) {
-    console.log("Err occurred while creating ad", e.errmsg);
+    console.log("Err occurred while creating ad", e);
   }
 
   return res.json({ err: "error occurred" });
@@ -173,12 +197,15 @@ async function getRandomAd(req, res) {
   }
 
   try {
-    let adExists = await Ad.find({_id:"66dc8ba19469461a934c37a3", available_balance: { $gt: 0.0001 }});
+    let adExists = await Ad.find({_id:"66e2c260eef0f0c52abc9479", available_balance: { $gt: 0.0001 }});
 
 
     const curr_bal = parseInt(adExists[0]?.available_balance) - 0.0001;
     const curr_impression = parseInt(adExists[0]?.impression) + 1;
     const id = adExists[0]?._id;
+
+    console.log(curr_bal);
+    console.log(curr_impression, "->", typeof(curr_impression))
 
     adExists = await Ad.findOneAndUpdate(
       { _id: id }, // Query to find the document by _id
