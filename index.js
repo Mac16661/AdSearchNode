@@ -1,5 +1,5 @@
 const express = require("express");
-const cors = require('cors');
+const cors = require("cors");
 require("dotenv").config();
 
 const { connectToMongoDB } = require("./connect");
@@ -9,7 +9,8 @@ const adStats = require("./routes/adStats");
 
 const app = express();
 const PORT = process.env.PORT;
-const uri = process.env.MONGODB;  // TODO: change ip if connection err occurs in atlas
+const uri = process.env.MONGODB; // TODO: change ip if connection err occurs in atlas
+const uri_old = process.env.MONGODB_OLD;
 
 app.use(cors());
 

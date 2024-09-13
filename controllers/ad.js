@@ -23,7 +23,6 @@ async function createAd(req, res) {
   const { name, image, available_balance, tags, org_id, org_name } =
     req.body;
 
-  console.log(req.body);
 
   // Basic checks
   if (org_id !== req.userID) {
@@ -74,7 +73,7 @@ async function createAd(req, res) {
       embedding,
     });
 
-    console.log(publishAd);
+    // console.log(publishAd);
     return res.json(publishAd);
   } catch (e) {
     console.log("Err occurred while creating ad", e);
@@ -83,7 +82,7 @@ async function createAd(req, res) {
   return res.json({ err: "error occurred" });
 }
 
-
+// TODO: Need to verify the transaction and then only proceed
 async function rechargeAd(req, res) {
   /**
    * Takes ad_id and organization_id and then fund ad campaigns
@@ -125,7 +124,7 @@ async function rechargeAd(req, res) {
       return res.json({ msg: "funded successfully" });
     }
   } catch (e) {
-    console.log("Ad does not exist ", e.errmsg);
+    console.log("Ad does not exist ", e);
     return res.json({ err: "Ad not found" });
   }
 
@@ -134,7 +133,7 @@ async function rechargeAd(req, res) {
 
 
 async function getRandomAd(req, res) {
-  console.log("getting a random ad");
+  console.log(new Date().toLocaleTimeString(),"getting a random ad");
 
   const {api_key} = req.query;
   var fullUrl = req.protocol + '://' + req.get('host') + req.originalUrl;
@@ -145,9 +144,10 @@ async function getRandomAd(req, res) {
     // Check if api_key exists and fetch wallet address
     const app_creator = await AppUser.findOne({_id: api_key});
     
-    const {id, wallet_address} = app_creator;
-
-    if (id != api_key) {
+    
+    const {_id, wallet_address} = app_creator;
+    // console.log(_id)
+    if (_id != api_key) {
       console.log("invalid api key");
       return res.status(403).json({
         message: "unauthorized",
@@ -197,15 +197,24 @@ async function getRandomAd(req, res) {
   }
 
   try {
-    let adExists = await Ad.find({_id:"66e2c260eef0f0c52abc9479", available_balance: { $gt: 0.0001 }});
+    // let adExists = await Ad.find({_id:"66e2c260eef0f0c52abc9479", available_balance: { $gt: 0.1 }});
 
+    let adExists = await Ad.aggregate([
+      { $match: { available_balance: { $gt: 0.1 } } },
+      { $sample: { size: 1 } }
+    ]);
+
+    console.log(adExists);
 
     const curr_bal = parseInt(adExists[0]?.available_balance) - 0.0001;
     const curr_impression = parseInt(adExists[0]?.impression) + 1;
     const id = adExists[0]?._id;
 
-    console.log(curr_bal);
-    console.log(curr_impression, "->", typeof(curr_impression))
+    // console.log(curr_bal);
+    // console.log(curr_impression, "->", typeof(curr_impression))
+    if(curr_bal < 0){
+      return res.sendStatus(500);
+    }
 
     adExists = await Ad.findOneAndUpdate(
       { _id: id }, // Query to find the document by _id

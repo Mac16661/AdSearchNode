@@ -88,7 +88,7 @@ async function handleRegisterOrganization(req, res) {
 
   // ->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
   // Destructuring data
-  const { signature, wallet_address, name, app_category } = req.body;
+  const { signature, wallet_address, name, org_category } = req.body;
   const message = new TextEncoder().encode("Get registered with ads-platform");
 
   // verify signature
@@ -120,7 +120,7 @@ async function handleRegisterOrganization(req, res) {
       JWT_SECRET_ORG
     );
 
-    return res.json({ token: token });
+    return res.json({ token: token, api_key: existingUser._id });
   } else {
     // Creating new user
     const newUser = await OrgUser.create({
@@ -137,7 +137,7 @@ async function handleRegisterOrganization(req, res) {
       JWT_SECRET_ORG
     );
 
-    return res.json({ token: token });
+    return res.json({ token: token, api_key: newUser._id });
   }
 
   return res.send(500).json({ err: "err occurred" });
