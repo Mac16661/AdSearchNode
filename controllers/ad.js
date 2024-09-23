@@ -1,9 +1,16 @@
-const {Connection, PublicKey, Transaction, LAMPORTS_PER_SOL, Keypair, SystemProgram, sendAndConfirmTransaction } = require("@solana/web3.js");
-const bs58 = require('bs58');
-const axios = require('axios');
+const {
+  Connection,
+  PublicKey,
+  Transaction,
+  LAMPORTS_PER_SOL,
+  Keypair,
+  SystemProgram,
+  sendAndConfirmTransaction,
+} = require("@solana/web3.js");
+const bs58 = require("bs58");
+const axios = require("axios");
+const { ObjectId } = require("bson");
 require("dotenv").config();
-
-
 
 const Ad = require("../models/ad");
 const { AppUser } = require("../models/user");
@@ -11,18 +18,15 @@ const { AppUser } = require("../models/user");
 const PARENT_PRIVATE_KEY = process.env.ADMIN_PRIVATE_KEY;
 const PARENT_PUBLIC_KEY = process.env.ADMIN_PUBLIC_KEY;
 
-
 // Connect to solana dev net
-const connection = new Connection("https://api.devnet.solana.com")
-
+const connection = new Connection("https://api.devnet.solana.com");
 
 async function createAd(req, res) {
   console.log("ads created");
 
   // Destructuring all the data
-  const { name, image, available_balance, tags, org_id, org_name } =
+  const { name, image, available_balance, tags, org_id, org_name, signature } =
     req.body;
-
 
   // Basic checks
   if (org_id !== req.userID) {
@@ -39,26 +43,75 @@ async function createAd(req, res) {
     });
   }
 
-  let embedding;
+  // Verify transaction and then proceed
+  // console.log(req.body);
+  
+
+  // // TODO: Need to work from here
+  // try {
+  //   console.log("Signature -> ", signature);
+  //   const transaction = await connection.getTransaction(signature, {
+  //     // commitment: 'confirmed',
+  //     maxSupportedTransactionVersion: 1,
+  //   });
+
+  //   console.log("Transaction -> ", transaction);
+
+  //   if (
+  //     (transaction?.meta?.postBalances[1] ?? 0) -
+  //       (transaction?.meta?.preBalances[1] ?? 0) !==
+  //     100000000
+  //   ) {
+  //     return res.status(411).json({
+  //       message: "Transaction signature/amount incorrect",
+  //     });
+  //   }
+
+  //   if (
+  //     transaction?.transaction.message.getAccountKeys().get(1)?.toString() !==
+  //     PARENT_PUBLIC_KEY
+  //   ) {
+  //     return res.status(411).json({
+  //       message: "Transaction sent to wrong address",
+  //     });
+  //   }
+  // } catch (e) {
+  //   console.log(e);
+  // }
+
+  //TODO: Additional check if Txn is not form user address
+  // if (
+  //   transaction?.transaction.message.getAccountKeys().get(0)?.toString() !==
+  //   user?.address
+  // ) {
+  //   return res.status(411).json({
+  //     message: "Transaction sent to wrong address",
+  //   });
+  // }
+
   // Create embedding
+  let embedding;
   try {
     const data = {
-      "text": name
+      text: name,
     };
 
-    
-    const response = await axios.post('http://127.0.0.1:5000/text-to-embedding', data, {
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
+    const response = await axios.post(
+      "http://127.0.0.1:5000/text-to-embedding",
+      data,
+      {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
 
     // console.log(response.data);
     // return res.json(response.data)
     embedding = response.data[0];
     // console.log(embedding)
-  }catch(e){
-    console.log("Err while fetching embeddings",e)
+  } catch (e) {
+    console.log("Err while fetching embeddings", e);
     return res.json({ err: "error occurred" });
   }
 
@@ -131,23 +184,24 @@ async function rechargeAd(req, res) {
   return res.sendStatus(500);
 }
 
-
 async function getRandomAd(req, res) {
-  console.log(new Date().toLocaleTimeString(),"getting a random ad");
+  console.log(new Date().toLocaleTimeString(), "getting a random ad");
 
-  const {api_key} = req.query;
-  var fullUrl = req.protocol + '://' + req.get('host') + req.originalUrl;
-  console.log(fullUrl)
-  console.log(req.query);
+  const { api_key } = req.query;
+  var fullUrl = req.protocol + "://" + req.get("host") + req.originalUrl;
+  // console.log(fullUrl)
+  // console.log(req.query);
 
-  try{
+  api_key_object = new ObjectId("66d9601d1d03b7fbc16746c1");
+  // console.log(typeof(api_key_object))
+  try {
     // Check if api_key exists and fetch wallet address
-    const app_creator = await AppUser.findOne({_id: api_key});
-    
-    
-    const {_id, wallet_address} = app_creator;
+    const app_creator = await AppUser.findOne({ id: api_key_object });
+
+    // console.log(app_creator)
+    const { id, wallet_address } = app_creator;
     // console.log(_id)
-    if (_id != api_key) {
+    if (id != api_key) {
       console.log("invalid api key");
       return res.status(403).json({
         message: "unauthorized",
@@ -163,33 +217,28 @@ async function getRandomAd(req, res) {
     // const currentBalance = await connection.getBalance(payer);
 
     // console.log(`Payer address -> ${payer.toBase58()} | balance -> ${currentBalance/LAMPORTS_PER_SOL} SOL`);
- 
+
     const secretkey = bs58.default.decode(PARENT_PRIVATE_KEY);
 
     // Genrating public key with private one
     const payerKeyPair = Keypair.fromSecretKey(secretkey);
-    
+
     // console.log(payerKeyPair);
 
     const transcation = new Transaction().add(
       SystemProgram.transfer({
         fromPubkey: payer,
         toPubkey: new PublicKey(wallet_address),
-        lamports: 100000
+        lamports: 100000,
       })
     );
 
-  
-    const signature = await sendAndConfirmTransaction(
-      connection,
-      transcation,
-      [payerKeyPair],
-    );
+    const signature = await sendAndConfirmTransaction(connection, transcation, [
+      payerKeyPair,
+    ]);
 
-
-    console.log(signature)
-
-  }catch(e){
+    console.log(signature);
+  } catch (e) {
     console.log("Err occurred during payout -> ", e);
     return res.status(500).json({
       message: "failed to make payment",
@@ -201,7 +250,7 @@ async function getRandomAd(req, res) {
 
     let adExists = await Ad.aggregate([
       { $match: { available_balance: { $gt: 0.1 } } },
-      { $sample: { size: 1 } }
+      { $sample: { size: 1 } },
     ]);
 
     console.log(adExists);
@@ -212,16 +261,15 @@ async function getRandomAd(req, res) {
 
     // console.log(curr_bal);
     // console.log(curr_impression, "->", typeof(curr_impression))
-    if(curr_bal < 0){
+    if (curr_bal < 0) {
       return res.sendStatus(500);
     }
 
     adExists = await Ad.findOneAndUpdate(
-      { _id: id }, // Query to find the document by _id
-      { $set: { available_balance: curr_bal, impression: curr_impression} }, // Update operation to set available_balance
+      { id: id }, // Query to find the document by _id
+      { $set: { available_balance: curr_bal, impression: curr_impression } }, // Update operation to set available_balance
       { new: true } // Option to return the updated document
     );
-
 
     // Only sending the image data as of now
     return res.json({ image: adExists.image });
