@@ -45,7 +45,6 @@ async function createAd(req, res) {
 
   // Verify transaction and then proceed
   // console.log(req.body);
-  
 
   // // TODO: Need to work from here
   // try {
@@ -133,6 +132,118 @@ async function createAd(req, res) {
   }
 
   return res.json({ err: "error occurred" });
+}
+
+async function createAdv2(req, res) {
+  console.log("ads created");
+
+  // Destructuring all the data
+  const { name, image, available_balance, tags, org_id, org_name, signature } =
+    req.body;
+
+  console.log(req.body);
+
+  // Verify transaction and then proceed
+  // console.log(req.body);
+
+  // // TODO: Need to work from here
+  // try {
+  //   console.log("Signature -> ", signature);
+  //   const transaction = await connection.getTransaction(signature, {
+  //     // commitment: 'confirmed',
+  //     maxSupportedTransactionVersion: 1,
+  //   });
+
+  //   console.log("Transaction -> ", transaction);
+
+  //   if (
+  //     (transaction?.meta?.postBalances[1] ?? 0) -
+  //       (transaction?.meta?.preBalances[1] ?? 0) !==
+  //     100000000
+  //   ) {
+  //     return res.status(411).json({
+  //       message: "Transaction signature/amount incorrect",
+  //     });
+  //   }
+
+  //   if (
+  //     transaction?.transaction.message.getAccountKeys().get(1)?.toString() !==
+  //     PARENT_PUBLIC_KEY
+  //   ) {
+  //     return res.status(411).json({
+  //       message: "Transaction sent to wrong address",
+  //     });
+  //   }
+  // } catch (e) {
+  //   console.log(e);
+  // }
+
+  //TODO: Additional check if Txn is not form user address
+  // if (
+  //   transaction?.transaction.message.getAccountKeys().get(0)?.toString() !==
+  //   user?.address
+  // ) {
+  //   return res.status(411).json({
+  //     message: "Transaction sent to wrong address",
+  //   });
+  // }
+
+  // Create embedding
+  let embedding;
+  try {
+    const data = {
+      text: name,
+    };
+
+    const response = await axios.post(
+      "http://127.0.0.1:5000/text-to-embedding",
+      data,
+      {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    // console.log(response.data);
+    // return res.json(response.data)
+    embedding = response.data[0];
+    // console.log(embedding)
+  } catch (e) {
+    console.log("Err while fetching embeddings", e);
+    return res.json({ err: "error occurred" });
+  }
+
+  try {
+    const publishAd = await Ad.create({
+      name,
+      image,
+      available_balance,
+      tags,
+      org_id,
+      org_name,
+      embedding,
+    });
+
+    // console.log(publishAd);
+    return res.json(publishAd);
+  } catch (e) {
+    console.log("Err occurred while creating ad", e);
+  }
+
+  return res.json({ err: "error occurred" });
+}
+
+async function getPublishedAds(req, res) {
+  const org_id = req.query.org_id;
+  try {
+    // Check if api_key exists and fetch wallet address
+    const ads = await Ad.find({ org_id: org_id });
+    console.log(ads);
+    res.json(ads);
+  } catch (e) {
+    console.log("Err while creating ad -> ", e);
+  }
 }
 
 // TODO: Need to verify the transaction and then only proceed
@@ -284,4 +395,6 @@ module.exports = {
   createAd,
   getRandomAd,
   rechargeAd,
+  createAdv2,
+  getPublishedAds,
 };
