@@ -196,7 +196,7 @@ async function createAdv2(req, res) {
     };
 
     const response = await axios.post(
-      "http://127.0.0.1:5000/text-to-embedding",
+      "https://asia-south2-adverse-436618.cloudfunctions.net/adverse-embedding",
       data,
       {
         headers: {
@@ -208,7 +208,7 @@ async function createAdv2(req, res) {
     // console.log(response.data);
     // return res.json(response.data)
     embedding = response.data[0];
-    // console.log(embedding)
+    console.log(embedding)
   } catch (e) {
     console.log("Err while fetching embeddings", e);
     return res.json({ err: "error occurred" });
@@ -225,7 +225,7 @@ async function createAdv2(req, res) {
       embedding,
     });
 
-    // console.log(publishAd);
+    console.log(publishAd);
     return res.json(publishAd);
   } catch (e) {
     console.log("Err occurred while creating ad", e);
@@ -239,7 +239,7 @@ async function getPublishedAds(req, res) {
   try {
     // Check if api_key exists and fetch wallet address
     const ads = await Ad.find({ org_id: org_id });
-    console.log(ads);
+    // console.log(ads);
     res.json(ads);
   } catch (e) {
     console.log("Err while creating ad -> ", e);
