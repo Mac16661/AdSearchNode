@@ -8,11 +8,11 @@ require("dotenv").config();
 const { connectToMongoDB } = require("./connect");
 const userRoute = require("./routes/user");
 const adRoute = require("./routes/ad");
-const adStats = require("./routes/adStats");
+
 
 const app = express();
 const PORT = process.env.PORT;
-const uri = process.env.MONGODB; // TODO: change ip if connection err occurs in atlas
+const uri = process.env.MONGODB; 
 const uri_old = process.env.MONGODB_OLD;
 const key = fs.readFileSync("key.pem", 'utf8');
 const cert = fs.readFileSync("cert.pem", 'utf8');
@@ -38,9 +38,9 @@ app.use(express.json());
 app.get('/', (req,res) => {
   res.json({ message: 'Hello from server!' });
 })
+
 app.use("/user", userRoute);
 app.use("/ad", adRoute);
-// app.use("/stats", adStats); //TODO: not sure whether required or not
 
 // TODO: listen
 // app.listen(PORT, () => {

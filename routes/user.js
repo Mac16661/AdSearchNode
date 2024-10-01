@@ -1,12 +1,12 @@
-/*
-
+/**
+ * User sign-in/sign-up and basic profile routes
 */
 
 const express = require("express");
 
 const {
-  handleRegisterAppCreator,
-  handleRegisterOrganization,
+  // handleRegisterAppCreator,
+  // handleRegisterOrganization,
   handleRegister,
   getUserProfile,
   saveUserProfile
@@ -15,8 +15,8 @@ const {
 const router = express.Router();
 
 // Routes
-router.post("/registerAppCreator", handleRegisterAppCreator);
-router.post("/registerOrganization", handleRegisterOrganization);
+// router.post("/registerAppCreator", handleRegisterAppCreator);
+// router.post("/registerOrganization", handleRegisterOrganization);
 router.post("/v2/register", handleRegister);
 router.get("/v2/getProfile", getUserProfile);
 router.post("/v2/saveProfile", saveUserProfile);

@@ -1,5 +1,5 @@
 /*
- *  Connection to every external services like mongoDB , Solana etc.
+ *  Connects to external services
  */
 
 const mongoose = require("mongoose");
@@ -8,15 +8,8 @@ const mongoose = require("mongoose");
 mongoose.set("strictQuery", true);
 
 async function connectToMongoDB(url) {
-  /*
-  
-  */
     return await mongoose.connect(url, {dbName: 'testDB'});
-    
-    // return await mongoose.connect(url);
 }
-
-
 
 module.exports = {
     connectToMongoDB,
